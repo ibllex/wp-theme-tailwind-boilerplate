@@ -19,7 +19,7 @@
    development hostname
 
 6. Run a search & replace in case-sensitive across the theme to replace all instances of **'wttb'** and **'WTTB'** with a text-domain specific to your theme/project
-   
+  
 7. Change the theme information in `assets/scss/style.scss` and the prepackaged plugin information in `plugins/wttb-additional-features/wttb-additional-features.php`
 
 8. Activate your theme
@@ -47,7 +47,7 @@ Package the theme files to the release directory
 
 ### Prepacked Plugin
 
-Wordpress theme should not include plugin functionality, see [here](https://make.wordpress.org/themes/handbook/review/required/#6-plugins) for detail. But sometimes we need to develop additional features for the theme and don't want to to create a separate project for maintenance. For that, we provide a simple way to develop the plugin and the theme in the same place and install the plugin with [tgm](http://tgmpluginactivation.com/) when release. 
+Wordpress theme should not include plugin functionality, see [here](https://make.wordpress.org/themes/handbook/review/required/#6-plugins) for detail. But sometimes we need to develop additional features for our theme and don't want to to create a separate project for maintenance. For that, we provide a simple way to develop the plugin and the theme in the same place and install the plugin with [tgm](http://tgmpluginactivation.com/) when release. 
 
 If you don't need this feature, just do this:
 
@@ -98,6 +98,7 @@ If you don't need this feature, just do this:
 
    ```shell
    rm -rf ./plugins
+   rm -rf ./inc/tgm
    rm -rf ./assets/scss/additional-features.scss
    rm -rf ./assets/js/additional-features.js
    ```
