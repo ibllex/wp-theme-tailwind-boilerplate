@@ -9,3 +9,8 @@
 
 // document open
 get_template_part( 'template-parts/document', 'open' );
+
+/**
+ * Hook - wttb_action_before.
+ */
+do_action( 'wttb_action_before' );

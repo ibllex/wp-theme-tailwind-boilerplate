@@ -1,0 +1,29 @@
+{
+  "proxy": "http://localhost/",
+  "name": "wttb",
+  "translation": "languages",
+  "plugins": {
+    "wttb-additional-features": {
+      "path": "plugins/wttb-additional-features",
+      "required": {
+        "dist/additional-features": "assets"
+      },
+      "include": {},
+      "exclude": {}
+    }
+  },
+  "ignores": [
+    "assets",
+    "node_modules",
+    "project.json",
+    "project-example.json",
+    "package.json",
+    "yarn.lock",
+    "package-lock.json",
+    "webpack.mix.js",
+    "tailwind.config.js",
+    "release",
+    "pack",
+    "plugins/bootstrap.php"
+  ]
+}

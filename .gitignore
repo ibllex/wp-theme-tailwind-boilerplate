@@ -10,7 +10,7 @@ languages
 ._*
 .DS_Store
 Thumbs.db
-local.json
+project.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

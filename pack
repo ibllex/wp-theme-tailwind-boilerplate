@@ -1,0 +1,281 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Utility for join tow or more paths.
+ *
+ * @return array|string|string[]|null
+ */
+function join_paths() {
+	$paths = array();
+
+	foreach ( func_get_args() as $arg ) {
+		if ( $arg !== '' ) {
+			$paths[] = $arg;
+		}
+	}
+
+	return preg_replace( '#/+#', '/', join( '/', $paths ) );
+}
+
+/**
+ * List a directory
+ *
+ * @param $path
+ * @param $callback
+ * @param $ignores
+ *
+ * @return bool
+ */
+function list_dir( $path, $callback, $ignores = [] ) {
+	$files = array_diff( scandir( $path ), array_merge( [ '.', '..' ], $ignores ) );
+	foreach ( $files as $file ) {
+		if ( call_user_func( $callback, $file ) === false ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
+ * str_starts_with for php < 8.0
+ *
+ * @param $string
+ * @param $query
+ *
+ * @return bool
+ */
+function starts_with( $string, $query ) {
+	return substr( $string, 0, strlen( $query ) ) === $query;
+}
+
+/**
+ * Remove files and non-empty directories.
+ *
+ * @param $path
+ *
+ * @return bool
+ */
+function rm( $path ) {
+	if ( is_file( $path ) ) {
+		return unlink( $path );
+	}
+
+	if ( is_dir( $path ) ) {
+		list_dir( $path, function ( $file ) use ( $path ) {
+			rm( "$path/$file" );
+		} );
+
+		return rmdir( $path );
+	}
+
+	return false;
+}
+
+/**
+ * Copy files and non-empty directories.
+ *
+ * @param $src
+ * @param $dst
+ *
+ * @return bool
+ */
+function cp( $src, $dst ) {
+	if ( file_exists( $dst ) ) {
+		rm( $dst );
+	}
+
+	if ( is_dir( $src ) ) {
+		mkdir( $dst );
+
+		return list_dir( $src, function ( $file ) use ( $src, $dst ) {
+			return cp( "$src/$file", "$dst/$file" );
+		} );
+	}
+
+	return copy( $src, $dst );
+}
+
+/**
+ * Move files and non-empty directories.
+ *
+ * @param $src
+ * @param $dst
+ */
+function mv( $src, $dst ) {
+	cp( $src, $dst );
+	rm( $src );
+}
+
+/**
+ * Zip a folder
+ *
+ * @param $path
+ * @param $output
+ * @param bool $rm
+ */
+function zip( $path, $output, $rm = false ) {
+	$basename = basename( $path );
+
+	// Get real path for our folder
+	$rootPath = realpath( $path );
+
+	// Initialize archive object
+	$zip = new ZipArchive();
+	$zip->open( $output, ZipArchive::CREATE | ZipArchive::OVERWRITE );
+
+	// Create recursive directory iterator
+	/** @var SplFileInfo[] $files */
+	$files = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $rootPath ),
+		RecursiveIteratorIterator::LEAVES_ONLY
+	);
+
+	foreach ( $files as $name => $file ) {
+		// Skip directories (they would be added automatically)
+		if ( ! $file->isDir() ) {
+			// Get real and relative path for current file
+			$filePath     = $file->getRealPath();
+			$relativePath = substr( $filePath, strlen( $rootPath ) + 1 );
+
+			// Add current file to archive
+			$zip->addFile( $filePath, $basename . '/' . $relativePath );
+		}
+	}
+
+	// Zip archive will be created only after closing object
+	$zip->close();
+
+	if ( $rm ) {
+		rm( $path );
+	}
+}
+
+/**
+ * Create an empty folder, if the directory exists, delete the directory first.
+ *
+ * @param $path
+ * @param int $mode
+ *
+ * @return bool
+ */
+function prepare_path( $path, $mode = 0777 ) {
+	if ( is_dir( $path ) ) {
+		if ( ! rm( $path ) ) {
+			return false;
+		}
+	}
+
+	return mkdir( $path, $mode, true );
+}
+
+/**
+ * Create .pot file for translation.
+ *
+ * @param $path
+ * @param $output
+ */
+function make_port( $path, $output ) {
+	system( "wp-cli i18n make-pot $path $output" );
+}
+
+/**
+ * Package a plugin
+ *
+ * @param $root
+ * @param $folder
+ * @param $name
+ * @param $config
+ */
+function pack_plugin( $root, $folder, $name, $config = [] ) {
+	$plugin_dir = join_paths( $root, $folder, $name );
+	if ( isset( $config['include'] ) ) {
+		foreach ( $config['include'] as $src => $dst ) {
+			$from = join_paths( $root, $src );
+			$to   = join_paths( $plugin_dir, $dst );
+
+			prepare_path( $to );
+			cp( $from, $to );
+		}
+	}
+
+	if ( isset( $config['required'] ) ) {
+		foreach ( $config['required'] as $src => $dst ) {
+			$from = join_paths( $root, $src );
+			$to   = join_paths( $plugin_dir, $dst );
+
+			prepare_path( $to );
+			mv( $from, $to );
+		}
+	}
+
+	if ( isset( $config['exclude'] ) ) {
+		foreach ( $config['exclude'] as $path ) {
+			rm( join_paths( $plugin_dir, $path ) );
+		}
+	}
+
+	if ( isset( $config['translation'] ) && $config['translation'] !== '' ) {
+		$pot_file = join_paths( $plugin_dir, $config['translation'] );
+		make_port( $plugin_dir, $pot_file );
+	}
+
+	zip( $plugin_dir, join_paths( $root, $folder, $name . '.zip' ), true );
+}
+
+/**
+ * Script Entry.
+ */
+
+// Read project config
+if ( ! file_exists( 'project.json' ) ) {
+	printf( 'The "project.json" file could not be found, so exit.' . PHP_EOL );
+
+	return;
+}
+
+$project = json_decode( file_get_contents( 'project.json' ), true );
+if ( empty( $project['name'] ) ) {
+	printf( 'Please set the project name in "project.json".' . PHP_EOL );
+
+	return;
+}
+
+$output    = './release';
+$theme     = $project['name'];
+$ignores   = $project['ignores'] ?? [];
+$plugins   = $project['plugins'] ?? [];
+$theme_dir = join_paths( $output, $theme );
+
+prepare_path( $output );
+prepare_path( $theme_dir );
+
+// Copy theme files
+list_dir( '.', function ( $file ) use ( $theme_dir ) {
+	if ( starts_with( $file, '.' ) ) {
+		return;
+	}
+
+	cp( $file, join_paths( $theme_dir, $file ) );
+}, $ignores );
+
+// Create theme translation file
+if ( isset( $project['translation'] ) && $project['translation'] !== '' ) {
+	make_port( $theme_dir, join_paths( $theme_dir, $project['translation'] . '/' . $theme . '.pot' ) );
+}
+
+// Pack plugins
+if ( ! empty( $plugins ) ) {
+	foreach ( $plugins as $name => $config ) {
+		pack_plugin( $theme_dir, basename( dirname( $config['path'] ) ), $name, $config );
+	}
+}
+
+# Clean theme files
+foreach ( $ignores as $file ) {
+	rm( join_paths( $theme_dir, $file ) );
+}
+
+// Pack current theme
+zip( $theme_dir, join_paths( $output, $theme . '.zip' ), true );
