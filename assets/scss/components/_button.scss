@@ -1,0 +1,7 @@
+.btn {
+    @apply w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md sm:w-auto;
+}
+
+.btn-dark {
+    @apply text-slate-300 bg-slate-800 hover:bg-slate-700;
+}

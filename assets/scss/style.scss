@@ -4,12 +4,28 @@ Theme URI:
 Description: Wordpress Theme rapid development with Tailwind & Laravel Mix
 Author: iBllex
 Author URI: 
-Requires at least: 5.3
-Tested up to: 5.8
-Requires PHP: 7.3.5
+License: MIT
+License URI: https://mit-license.org/
 Version: 1.0.0
+Text Domain: wttb
+Tags:
 */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/*!
+ * Base
+ */
+ @import "~tailwindcss/base";
+ @import "partials/base";
+ 
+ /*!
+  * Components
+  */
+ @import "~tailwindcss/components";
+ @import "partials/components";
+ 
+ /*!
+  * Utilities
+  */
+ @import "~tailwindcss/utilities";
+ @import "partials/utilities";
+ 

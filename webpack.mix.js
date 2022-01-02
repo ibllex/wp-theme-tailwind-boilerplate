@@ -11,10 +11,10 @@ mix.webpackConfig({
 if (local.proxy) {
     mix.browserSync({
         proxy: local.proxy,
-        injectChanges: true,
+        injectChanges: false,
         open: false,
         files: [
-            '*.php',
+            '*.{php,css}',
             'dist/**/*.{css,js}',
             'inc/**/*.php',
             'templates/**/*.php',
