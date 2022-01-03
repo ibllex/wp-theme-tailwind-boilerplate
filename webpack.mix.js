@@ -38,6 +38,27 @@ mix.setPublicPath('.');
 mix.js('assets/js/app.js', 'dist/js');
 mix.sass('assets/scss/style.scss', '.');
 
-// additional-features
-mix.js('assets/js/additional-features.js', 'dist/additional-features/js');
-mix.sass('assets/scss/additional-features.scss', 'dist/additional-features/css');
+if (project.plugins) {
+    // build scripts, styles and copy assets for prepacked plugins
+    for (const name in project.plugins) {
+        const plugin = project.plugins[name];
+        const styles = plugin.styles || {};
+        const scripts = plugin.scripts || {};
+        const assets = plugin.assets || {};
+
+        // build scripts
+        for (const from in scripts) {
+            mix.js(from, scripts[from]);
+        }
+
+        // build styles
+        for (const from in styles) {
+            mix.sass(from, styles[from]);
+        }
+
+        // copy assets
+        for (const from in assets) {
+            mix.copy(from, assets[from]);
+        }
+    }
+}

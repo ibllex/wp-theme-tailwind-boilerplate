@@ -5,6 +5,13 @@
   "plugins": {
     "wttb-additional-features": {
       "path": "plugins/wttb-additional-features",
+      "styles": {
+        "assets/scss/additional-features.scss": "dist/additional-features/css"
+      },
+      "scripts": {
+        "assets/js/additional-features.js": "dist/additional-features/js"
+      },
+      "assets": {},
       "required": {
         "dist/additional-features": "assets"
       },
