@@ -43,9 +43,13 @@ Runs the development build
 
 Runs the product build
 
-#### `php pack`
+#### `php pack --plugins=prepacked`
 
-Package the theme files to the release directory
+Package the theme files to the release directory built-in plugins are prepacked
+
+#### `php pack --plugins=outside`
+
+Package the theme files to the release directory and built-in plugins are packaged separately
 
 ### Prepacked Plugin
 

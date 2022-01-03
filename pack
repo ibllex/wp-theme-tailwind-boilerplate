@@ -184,12 +184,12 @@ function make_port( $path, $output ) {
  * Package a plugin
  *
  * @param $root
- * @param $folder
+ * @param $plugin_dir
+ * @param $output
  * @param $name
  * @param $config
  */
-function pack_plugin( $root, $folder, $name, $config = [] ) {
-	$plugin_dir = join_paths( $root, $folder, $name );
+function pack_plugin( $root, $plugin_dir, $output, $name, $config = [] ) {
 	if ( isset( $config['include'] ) ) {
 		foreach ( $config['include'] as $src => $dst ) {
 			$from = join_paths( $root, $src );
@@ -221,12 +221,28 @@ function pack_plugin( $root, $folder, $name, $config = [] ) {
 		make_port( $plugin_dir, $pot_file );
 	}
 
-	zip( $plugin_dir, join_paths( $root, $folder, $name . '.zip' ), true );
+	zip( $plugin_dir, join_paths( $output, $name . '.zip' ), true );
 }
 
 /**
  * Script Entry.
  */
+
+$params = getopt( '', [
+	'plugins::',
+	'help::'
+] );
+
+if ( isset( $params['help'] ) ) {
+	echo( <<<HELP
+Usage: php pack [options]
+    --plugins <"prepacked", "outside">             Package built-in plugins
+HELP
+	);
+	echo PHP_EOL;
+
+	die();
+}
 
 // Read project config
 if ( ! file_exists( 'project.json' ) ) {
@@ -266,9 +282,14 @@ if ( isset( $project['translation'] ) && $project['translation'] !== '' ) {
 }
 
 // Pack plugins
-if ( ! empty( $plugins ) ) {
+if ( ! empty( $plugins ) && isset( $params['plugins'] ) ) {
 	foreach ( $plugins as $name => $config ) {
-		pack_plugin( $theme_dir, basename( dirname( $config['path'] ) ), $name, $config );
+		$plugin_dir    = join_paths( $theme_dir, dirname( $config['path'] ), $name );
+		$plugin_output = $output;
+		if ( $params['plugins'] !== 'outside' ) {
+			$plugin_output = dirname( $plugin_dir );
+		}
+		pack_plugin( $theme_dir, $plugin_dir, $plugin_output, $name, $config );
 	}
 }
 
